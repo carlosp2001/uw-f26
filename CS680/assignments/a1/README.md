@@ -17,7 +17,6 @@ Required Python packages:
 - `numpy`
 - `pandas`
 - `matplotlib`
-- `scikit-learn`
 
 These packages are typically included with Anaconda3.
 
@@ -38,7 +37,7 @@ The notebook expects datasets to be available in the local `datasets/` directory
 From a terminal with Anaconda enabled, navigate to this assignment directory:
 
 ```bash
-cd /Users/carlospineda/PycharmProjects/uw-f26/CS680/assignments/a1
+cd ~/a1
 ```
 
 Start Jupyter Notebook:
@@ -66,7 +65,7 @@ Run the notebook cells in order.
 If you get a `FileNotFoundError` when loading files from `./datasets/`, make sure the notebook is running from the assignment directory:
 
 ```text
-/Users/carlospineda/PycharmProjects/uw-f26/CS680/assignments/a1
+~/a1
 ```
 
 You can check the current working directory inside the notebook with:
