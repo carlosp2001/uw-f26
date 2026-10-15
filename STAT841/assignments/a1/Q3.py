@@ -6,8 +6,12 @@ Observations are columns (d x n). No prebuilt PCA/Fisher/CV routines.
 """
 from pathlib import Path
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
+
+# Uncomment to visualize the dataset generated
+# import matplotlib
+
+# matplotlib.use('MacOSX')
+
 import matplotlib.pyplot as plt
 
 SEED = 42
@@ -114,7 +118,68 @@ def save_comparison_figure(errors_pca, errors_fisher, path):
     plt.close(fig)
 
 
+def plot_dataset(X: np.ndarray, y: np.ndarray) -> None:
+    """Visualize the first two features of the generated dataset."""
+
+    # Select observations belonging to each class
+    negative_mask = y == -1
+    positive_mask = y == 1
+
+    plt.figure(figsize=(11, 6))
+
+    # Class -1
+    plt.scatter(
+        X[0, negative_mask],
+        X[1, negative_mask],
+        color="royalblue",
+        alpha=0.65,
+        label="Class -1",
+        s=35
+    )
+
+    # Class +1
+    plt.scatter(
+        X[0, positive_mask],
+        X[1, positive_mask],
+        color="tomato",
+        alpha=0.65,
+        label="Class +1",
+        s=35
+    )
+
+    # Population class means
+    plt.scatter(
+        [0, 0],
+        [-A, A],
+        color="black",
+        marker="x",
+        s=130,
+        linewidths=2,
+        label="Population class means"
+    )
+
+    plt.axhline(0, color="gray", linestyle="--", alpha=0.5)
+    plt.axvline(0, color="gray", linestyle="--", alpha=0.5)
+
+    plt.xlabel("Feature X1 (variance = 300)")
+    plt.ylabel("Feature X2 (class separation)")
+
+    plt.title("Question 3(e): Generated Gaussian Dataset")
+
+    plt.legend()
+    plt.grid(alpha=0.25)
+
+    plt.tight_layout()
+    plt.savefig("Q3_dataset.png", dpi=300)
+    plt.show()
+
+
 def main():
+    rng = np.random.default_rng(SEED)
+    X, y = generate_dataset(rng)
+
+    # Uncomment to visualize the original dataset
+    # plot_dataset(X, y)
     errors_pca, errors_fisher = run_experiment()
     output = Path(__file__).resolve().parent / 'Q3_comparison.png'
     save_comparison_figure(errors_pca, errors_fisher, output)
