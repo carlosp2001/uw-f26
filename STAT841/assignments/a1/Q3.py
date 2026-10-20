@@ -81,9 +81,7 @@ def classification_error(y_true, y_pred):
     return float(np.mean(y_true != y_pred))
 
 
-def run_experiment():
-    rng = np.random.default_rng(SEED)
-    X, y = generate_dataset(rng)
+def run_experiment(X, y, rng):
     errors_pca = []
     errors_fisher = []
 
@@ -180,7 +178,7 @@ def main():
 
     # Uncomment to visualize the original dataset
     # plot_dataset(X, y)
-    errors_pca, errors_fisher = run_experiment()
+    errors_pca, errors_fisher = run_experiment(X, y, rng)
     output = Path(__file__).resolve().parent / 'Q3_comparison.png'
     save_comparison_figure(errors_pca, errors_fisher, output)
     print(f'Random seed: {SEED}')
