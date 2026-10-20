@@ -1,39 +1,57 @@
-# STAT 841 / CM 763 — Assignment 1 (Fall 2026)
-Code and data for Questions 3, 5, and 6.
-Environment
-- Anaconda3, Python 3.12.4
-- Packages: NumPy, pandas, Matplotlib
-From the extracted ZIP directory:
-conda env create -f environment.yml
-conda activate stat841-a1
-Run
+# STAT 841 / CM 763 - Assignment 1
+
+Code and data for Questions 3, 5, and 6. Author: Carlos Pineda.
+
+## How I ran the code
+
+I used **Anaconda3 with Python 3.12.14**, configured as the Python interpreter
+in **PyCharm**. I used my existing Conda environment rather than creating a
+separate environment for this assignment, and ran the scripts from PyCharm.
+
+Dependencies: **NumPy, pandas, and Matplotlib**.
+
+## How to run
+
+Extract the ZIP and open a terminal in the `a1` folder containing the scripts
+and CSV files. Use an existing Python environment; activate your existing Conda
+environment first if needed. A new environment and PyCharm are not required.
+
+Install the dependencies in that interpreter, then run:
+
+```bash
+python -m pip install numpy pandas matplotlib
 python Q3.py
 python Q5.py
 python Q6.py
-To run Question 6 separately:
+```
+
+Alternatively, open the folder in PyCharm, select your existing Anaconda/Python
+interpreter, install the same dependencies in it, and run each script with
+this folder as the working directory.
+
+`Q6.py` runs both computational parts. To run them separately:
+
+```bash
 python Q6.py --part b
 python Q6.py --part c
-The scripts use relative paths and require no external downloads. Run them in a writable directory; they may overwrite existing result files.
-Included files
-File	Purpose
-Q3.py	Simulated PCA vs. Fisher; saves Q3_comparison.png.
-Q5.py	Forward/backward passes and nine gradient checks.
-Q6.py	Five-fold model selection and early stopping.
-Q6_cv_results.csv	All 27 cross-validation candidates.
-Q6_predictions.csv	Probabilities for 300 test observations.
-environment.yml	Conda setup.
+```
 
+## Scripts and outputs
 
-Question 6 input data (included in the ZIP):
-- A1_train.csv: 600 labeled observations, 20 features.
-- A1_test.csv: 300 unlabeled observations, 20 features.
-- A1_noise_train.csv: 100 additional features for Q6(c).
-- A1_resampling.csv: fixed CV folds and early-stopping split.
-Observations are columns and are matched by ID. All preprocessing uses training data only.
-Reproducibility and numerical checks
-- Q3: random seed 42; 20 stratified splits; PCA and Fisher computed using NumPy linear algebra.
-- Q5: fixed inputs (no seed); centered finite differences with epsilon=1e-6.
-- Q6(b): supplied folds (no seed); Newton-Raphson maximum 150 iterations; update/gradient tolerance 1e-8, verified final gradient below 1e-5.
-- Q6(c): supplied fit/validation split; 3,000 full-batch updates, learning rate 0.05; losses recorded every 10 updates; saves Q6_early_stopping.png.
-Stable log/probability calculations and matrix solves are used. No prebuilt PCA, classification, optimization, cross-validation, automatic differentiation, or early-stopping routines are called.
-Written solutions and required figures are submitted separately to Crowdmark. Rename the submission ZIP to WatIAM_A1.zip, using your Waterloo username.
+| Script | Purpose and outputs |
+|---|---|
+| `Q3.py` | PCA versus Fisher; prints errors and saves `Q3_comparison.png`. |
+| `Q5.py` | Prints probability, loss, nine gradient comparisons, and maximum discrepancy. |
+| `Q6.py --part b` | Saves `Q6_cv_results.csv` and `Q6_predictions.csv`. |
+| `Q6.py --part c` | Saves `Q6_early_stopping.png`, `Q6_early_stopping.csv`, and `Q6_early_stopping_summary.json`. |
+
+Keep all four supplied datasets beside `Q6.py`: `A1_train.csv`, `A1_test.csv`,
+`A1_noise_train.csv`, and `A1_resampling.csv`. Observations are columns and are
+matched by ID. Running the scripts can overwrite existing result files.
+
+## Reproducibility and numerical checks
+
+- **Q3:** seed `42`; 20 stratified splits; NumPy linear algebra for PCA and Fisher.
+- **Q5:** fixed inputs, no randomness; centered finite differences with `epsilon=1e-6`.
+- **Q6(b):** supplied folds; Newton maximum 150 iterations, update/gradient tolerance `1e-8`, final maximum absolute gradient at most `1e-5`.
+- **Q6(c):** supplied fit/validation split; zero initialization; 3,000 full-batch updates with step size `0.05`; losses recorded every 10 updates, including iteration 0.
