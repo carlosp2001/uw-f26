@@ -1,0 +1,19 @@
+{
+  "features": 120,
+  "fit_observations": 480,
+  "validation_observations": 120,
+  "learning_rate": 0.05,
+  "completed_updates": 3000,
+  "record_every": 10,
+  "recorded_checkpoints": 301,
+  "selected_iteration": 200,
+  "initial_fit_loss": 0.6931471805599453,
+  "initial_validation_loss": 0.6931471805599453,
+  "selected_fit_loss": 0.3300895547212411,
+  "selected_validation_loss": 0.4657362499787628,
+  "final_fit_loss": 0.2538488823237239,
+  "final_validation_loss": 0.6859033695122461,
+  "selected_coefficient_norm": 1.6341449725451425,
+  "final_coefficient_norm": 4.079999793845272,
+  "selected_intercept": 0.01570238609085629
+}
