@@ -1,4 +1,4 @@
-"""STAT 841 / CM 763, Assignment 2: Question 1(a)-(b)."""
+"""STAT 841 / CM 763, Assignment 2: Question 1(a)-(c)."""
 
 from pathlib import Path
 import csv
@@ -13,9 +13,14 @@ N = 80
 H = 0.12
 SIGMA = 0.3
 SEED = 841
+REPETITIONS = 200
 MODEL_SIZES = (5, 9, 17, 33)
 OUT = Path(__file__).resolve().parent
 COLUMNS = ("m", "singular_ratio", "empirical_error", "sure", "latent_error")
+SIMULATION_COLUMNS = (
+    "m", "mean_empirical_error", "mean_sure", "mean_latent_error",
+    "mean_difference", "mcse_difference", "selection_count",
+)
 
 
 def true_function(x: np.ndarray) -> np.ndarray:
@@ -110,13 +115,109 @@ def save_figure(
     plt.close(fig)
 
 
+def repeated_experiments(
+        x: np.ndarray,
+        f: np.ndarray,
+        rng: np.random.Generator,
+        first_rows: list[dict],
+) -> list[dict]:
+    """Reuse part (b) as repetition 1, then draw 199 new noise vectors."""
+    b = REPETITIONS
+    number_of_models = len(MODEL_SIZES)
+
+    # Each row is a repetition; each column is a model size.
+    empirical = np.empty((b, number_of_models))
+    sure = np.empty((b, number_of_models))
+    latent = np.empty((b, number_of_models))
+
+    # Retain the results already calculated from the first response vector.
+    for j, row in enumerate(first_rows):
+        empirical[0, j] = row["empirical_error"]
+        sure[0, j] = row["sure"]
+        latent[0, j] = row["latent_error"]
+
+    # Inputs, centers, and width stay fixed across all repetitions.
+    designs = [design_matrix(x, m) for m in MODEL_SIZES]
+
+    for t in range(1, b):
+        # Continue the existing generator: do not reset the seed here.
+        y = f + rng.normal(loc=0.0, scale=SIGMA, size=x.size)
+
+        # All four models use this same response vector.
+        for j, m in enumerate(MODEL_SIZES):
+            _, fitted = least_squares_fit(designs[j], y)
+            empirical[t, j], sure[t, j], latent[t, j] = error_measures(
+                y, fitted, f, m
+            )
+
+    selection_counts = np.zeros(number_of_models, dtype=int)
+    for t in range(b):
+        # argmin returns the first minimum. MODEL_SIZES is increasing,
+        # so exact ties select the smaller m. Negative SURE is retained.
+        selected_index = int(np.argmin(sure[t]))
+        selection_counts[selected_index] += 1
+
+    rows = []
+    for j, m in enumerate(MODEL_SIZES):
+        differences = sure[:, j] - latent[:, j]
+        mean_difference = float(np.mean(differences))
+
+        # Use the MCSE formula in the assignment, including b - 1.
+        sample_variance = np.sum((differences - mean_difference) ** 2) / (b - 1)
+        mcse = float(np.sqrt(sample_variance) / np.sqrt(b))
+
+        rows.append(dict(
+            m=m,
+            mean_empirical_error=float(np.mean(empirical[:, j])),
+            mean_sure=float(np.mean(sure[:, j])),
+            mean_latent_error=float(np.mean(latent[:, j])),
+            mean_difference=mean_difference,
+            mcse_difference=mcse,
+            selection_count=int(selection_counts[j]),
+        ))
+    return rows
+
+
+def save_simulation_results(rows: list[dict]) -> None:
+    """Save the four simulation rows using the required CSV layout."""
+    with (OUT / "Q1_simulation.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=SIMULATION_COLUMNS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({
+                name: str(row[name]) if name in ("m", "selection_count")
+                else f"{row[name]:.17g}"
+                for name in SIMULATION_COLUMNS
+            })
+
+
+def save_simulation_figure(rows: list[dict]) -> None:
+    """Plot the three average errors against m in one 300-DPI PNG."""
+    sizes = [row["m"] for row in rows]
+    fig, ax = plt.subplots(figsize=(8, 4.8), constrained_layout=True)
+    ax.plot(sizes, [row["mean_empirical_error"] for row in rows],
+            marker="o", label="Average training error")
+    ax.plot(sizes, [row["mean_sure"] for row in rows],
+            marker="s", linestyle="--", label="Average SURE")
+    ax.plot(sizes, [row["mean_latent_error"] for row in rows],
+            marker="^", linestyle=":", label="Average true-function error")
+    ax.set_xticks(sizes)
+    ax.set_xlabel("Number of RBF units (m)")
+    ax.set_ylabel("Average error")
+    ax.set_title(f"RBF regression: {REPETITIONS} repetitions (seed {SEED})")
+    ax.grid(alpha=0.2)
+    ax.legend()
+    fig.savefig(OUT / "Q1_simulation_figure.png", dpi=300)
+    plt.close(fig)
+
+
 def main() -> None:
     # Equivalent to x_i = -1 + 2*(i-1)/(N-1), i = 1, ..., N.
     x = np.linspace(-1.0, 1.0, N)
     f = true_function(x)
 
     # Generate ONE response vector shared by all four models.
-    # For part (c), retain this vector as repetition 1 and continue this RNG.
+    # Part (c) retains this vector as repetition 1 and continues this RNG.
     rng = np.random.default_rng(SEED)
     noise = rng.normal(loc=0.0, scale=SIGMA, size=N)
     y = f + noise
@@ -158,6 +259,19 @@ def main() -> None:
     print(f"Empirical-error minimum m (comparison only): {select_model(rows, 'empirical_error')}")
     print(f"True-function-error minimum m (comparison only): {select_model(rows, 'latent_error')}")
     print("Saved Q1_first.csv and Q1_first_figure.png next to Q1.py.")
+
+    # Question 1(c): the generator has already drawn the noise for part (b).
+    simulation_rows = repeated_experiments(x, f, rng, rows)
+    save_simulation_results(simulation_rows)
+    save_simulation_figure(simulation_rows)
+
+    print("\nQ1(c): averages over 200 repetitions, including part (b)")
+    print("m   mean_e       mean_s       mean_q       mean_d       mcse         count")
+    for row in simulation_rows:
+        values = "  ".join(f"{row[name]:.8f}" for name in SIMULATION_COLUMNS[1:-1])
+        print(f"{row['m']:2d}  {values}  {row['selection_count']:3d}")
+    print("Selection count total:", sum(row["selection_count"] for row in simulation_rows))
+    print("Saved Q1_simulation.csv and Q1_simulation_figure.png next to Q1.py.")
 
 
 if __name__ == "__main__":
