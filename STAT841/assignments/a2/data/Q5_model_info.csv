@@ -1,0 +1,5 @@
+model,kernel,h,beta0
+quadratic,quadratic,,-2.391747353819349
+gaussian_02,gaussian,0.2,0.12520141484694047
+gaussian_07,gaussian,0.7,0.40173729847865597
+gaussian_14,gaussian,1.4,1.2807865141189505

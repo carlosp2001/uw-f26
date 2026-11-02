@@ -1,0 +1,5 @@
+model,train_error,test_error,support_count,symmetry_error
+quadratic,0,0,4,0
+gaussian_02,0,0.095000000000000001,38,0
+gaussian_07,0,0,17,0
+gaussian_14,0,0,10,0
