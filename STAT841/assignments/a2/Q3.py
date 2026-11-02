@@ -1,10 +1,12 @@
-"""STAT 841 / CM 763: Q3(b), with numerical checks for the fitted models."""
+"""STAT 841 / CM 763: Q3(b)-(d), SVM fits, checks, and boundaries."""
 
 import csv
 from pathlib import Path
 import sys
 
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 import scipy
 from scipy.optimize import minimize
 
@@ -119,6 +121,63 @@ def solution_checks(Z: np.ndarray, y: np.ndarray, model: dict, rho: float):
     return float(primal), float(dual), float(v_feas), float(v_gap)
 
 
+def plot_models(X: np.ndarray, y: np.ndarray, models: list, filename: Path):
+    """Plot all three models in the original coordinates, as Q3(d) requires."""
+    grid = np.linspace(-2.8, 2.8, 401)
+    x1_grid, x2_grid = np.meshgrid(grid, grid)
+    grid_points = np.vstack((x1_grid.ravel(), x2_grid.ravel()))
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4.9))
+
+    # Reuse the default plotting colors consistently in all panels.
+    line_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"][2:5]
+
+    for ax, (name, rho, model, beta0_original) in zip(axes, models):
+        for label, marker in [(-1, "o"), (1, "^")]:
+            selected = y == label
+            ax.scatter(
+                X[0, selected], X[1, selected], s=28,
+                marker=marker, label=f"Class {label:+d}", zorder=3,
+            )
+
+        # The intercept is converted back to the original coordinates.
+        scores = (model["beta"] @ grid_points + beta0_original).reshape(x1_grid.shape)
+        contours = ax.contour(
+            x1_grid, x2_grid, scores, levels=[-1.0, 0.0, 1.0],
+            colors=line_colors, linestyles=["--", "-", "--"],
+            linewidths=[1.2, 1.6, 1.2],
+        )
+        # Label the three contours away from observations and support markers.
+        beta = model["beta"]
+        positive_label_x = 2.0 if name == "translated" else 1.6
+        label_positions = [
+            (x1, (level - beta0_original - beta[0] * x1) / beta[1])
+            for level, x1 in zip((-1.0, 0.0, 1.0), (-1.8, 0.0, positive_label_x))
+        ]
+        ax.clabel(
+            contours, fmt={-1.0: r"$g=-1$", 0.0: r"$g=0$", 1.0: r"$g=+1$"},
+            manual=label_positions, fontsize=11,
+        )
+
+        support = model["support"]
+        ax.scatter(
+            X[0, support], X[1, support], s=125,
+            facecolors="none", edgecolors=plt.rcParams["axes.edgecolor"],
+            linewidths=1.4, label="Support vector", zorder=4,
+        )
+        ax.set_xlim(-2.8, 2.8)
+        ax.set_ylim(-2.8, 2.8)
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_xlabel(r"$x_1$", fontsize=12)
+        ax.set_ylabel(r"$x_2$", fontsize=12)
+        ax.set_title(f"{name} ($\\rho={rho:g}$)", fontsize=12)
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", ncol=3, fontsize=11)
+    fig.tight_layout(rect=(0.0, 0.09, 1.0, 1.0))
+    fig.savefig(filename, dpi=300)
+    plt.close(fig)
+
+
 def main():
     folder = Path(__file__).resolve().parent
     X_train, y_train = load_data(folder / "data/Q3_train.csv")
@@ -130,8 +189,9 @@ def main():
         ("translated", 50.0, np.array([-2.0, 2.0])),
     ]
     rows = []
+    plot_data = []
     status_lines = [
-        f"Python {sys.version.split()[0]}; NumPy {np.__version__}; SciPy {scipy.__version__}",
+        f"Python {sys.version.split()[0]}; NumPy {np.__version__}; SciPy {scipy.__version__}; Matplotlib {matplotlib.__version__}",
         f"SLSQP; ftol={FTOL}; maxiter={MAXITER}; initial alpha=zeros(n)",
         "Analytic objective and constraint derivatives; no randomness.",
     ]
@@ -145,6 +205,7 @@ def main():
 
         beta, beta0 = model["beta"], model["beta0"]
         beta0_original = float(beta0 - beta @ shift)
+        plot_data.append((name, rho, model, beta0_original))
         margin = float(1 / np.linalg.norm(beta))
         support_count = int(np.sum(model["support"]))
 
@@ -182,7 +243,8 @@ def main():
             # Preserve integer counts and save floats with 17 significant digits.
             writer.writerow([format(value, ".17g") if isinstance(value, (float, np.floating)) else value for value in row])
     (folder / "Q3_solver_status.txt").write_text("\n\n".join(status_lines) + "\n", encoding="utf-8")
-    print("Saved Q3_results.csv and Q3_solver_status.txt next to Q3.py.")
+    plot_models(X_train, y_train, plot_data, folder / "Q3_boundaries.png")
+    print("Saved Q3_results.csv, Q3_solver_status.txt, and Q3_boundaries.png next to Q3.py.")
 
 
 if __name__ == "__main__":
