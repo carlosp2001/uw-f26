@@ -1,0 +1,2 @@
+model,h,train_error,test_error,support_count
+hard,0.7,0.0,0.15,16
